@@ -1,0 +1,465 @@
+	
+
+Guten Morgen :)
+
+Peter Loos
+
+peter.loos@gmx.de
+
+"Du" 
+
+30 Jahren  15 SW-Entwicklung (klassische C++) 
+15 Jahre Aus- und Weiterbildung
+
+2 Tools:  Github (Unterlagen)  ... VS Studio (Übung)
+
+
+Pausen:   10.30  (15 min)
+
+12 bis 13 Uhr:  Mittagspause
+
+Pause:  so um 15 Uhr
+
+17 Uhr // 16 Uhr 
+
+// ============================================================
+
+C++  Kritik:
+
+C++ ist "Value" basiert / Werte - lastig / Kopien
+
+C++ kann auch Referenzen / damit wird eine Kopie vermieden
+
+// ============================================================
+
+Move - Semantik:
+
+== DE0  Lokale Objekt - wird freigegeben
+
+== E50  Kopier-Konstruktor: Legt eine Kopie am Stack an - wird freigegeben
+
+== 8A0  Neuer Puffer für Ziel Objekt
+
+Es wären Optimierungen "möglich" gewesen
+
+RVO:  Return Value Optimization
+
+--------------------
+
+Verschiebe-Semantik:   "ownership has been moved"
+
+Es werden die Zeiger einfach umkopiert !!!
+
+Geht das gut ???
+
+== C20  Lokales Objekt
+
+std::declval<T>:  Sagt zum Compiler: Will eine Variable
+						(nur zur Übersetzungszeit) vom Typ T
+
+Einfach: Typ ==> Variable
+
+Einfach: Variable ==> Typ     decltype
+
+decltype kann neben einer einfachen Variablen
+    auch einen arith. Ausdruck haben (  a + b )
+
+// ============================================================
+
+Was ist an dem operator() speziell ???
+
+bool operator() (int n1, int n2, int a, int b, int c)
+
+// Anzahl der Parameter festgelegt: 2 Operanden - 2 ist FEST 
+friend bool operator+ (int op1, int op2);
+// oder
+bool operator+ (int op2);  // Der linke Operand ist das aktuelle Objekt
+
+Viele "andere" stylische Programmiersprachen (JavaScript, C#, Java)
+ermöglichen solche Funktionen quasi "inline" / vor Ort, dort wo es benötigt wird
+in einer Kurzschreibweise: Zum Beispiel KEIN Name
+
+// ============================================
+
+std::generate 
+
+Was ist ein Merkmal der STL - Algorithmen:
+
+== Sie erfüllen allgemeine Aufgaben
+
+== Was ist der Unterschied zur for-Schleife:
+
+		Da könnte man Index-Fehler machen.
+		Algo: Der Bereich wird über begin und end festgelegt!
+
+== Building Blocks:   Kapselt eine Funktionalität -
+
+		typischerweise in Modern C++ in Lambdas :)
+
+// ==========================================
+
+		// Range Based Loop - so sieht sie aus !
+        for (int n : vec) {
+            std::cout << n << " ";
+        }
+
+		a) an vec muss sein: auto iter = vec.begin(), vec.end()
+
+		b) an iter muss sein:   ++, !=,  ==, * (scheiben oder lesen)
+
+		// Range Based Loop - so sieht sie der Compiler beim Übersetzen
+		auto iter = vec.begin();
+		while (iter != vec.end()) {
+            std::cout << *iter << " ";
+			*iter = 99;
+
+			++ iter;
+        }
+
+// ==========================================
+
+std::string s2 = "test";  // KOPIER-Konstruktor
+
+std::string s2;
+s2 = "test";   // ist WERTZUWEISUNG
+
+// ==========================================
+
+std::initializer_list
+
+Ist eine Helper-Klasse : Zum Transport bel. vieler Werte 
+über einen Funktionsaufruf --- OHNE new
+
+Ist kein ECHTER STL Container
+
+Hat aber begin und end
+
+Light Weight Container
+
+Das alles ginge doch auch mit std::vector: Korrekt !!!
+
+(( Embedded Programming: Memory // No dynamic Memory // no new ))
+
+std::vector:              Prinzipiell new
+std::initializer_list     Arbeitet OHNE new
+
+Plus: ist so konzipiert, dass std::vector - Objekte mit 
+einem std::initializer_list -  Objekt vorbelegt werden können.
+
+// ==========================================
+
+std::string
+std::string_view   Einfacher / Performanter als std::string
+
+// ==========================================
+
+Problem mit new? :)    Dynamisch ... und zu einem BELIEBIGEN Zeitpunkt: delete
+
+Heap ist okay --- alles, was mit new angelegt wird,
+landet auf dem Heap
+
+(( Lokale Variablen liegen auf dem Stack ))
+
+Zu jedem new gehört EIN delete !!!
+
+a) Wer gibt frei ?    
+
+int* ip = new ....
+Später: delete ip;
+
+...
+
+function (int* p) ...
+
+function (ip);
+
+Konventionen // Dokumentation // Regelwerk
+
+Praxis // Erfahrung // größeren Projekt: Dieses Thema ist schwer !!!
+
+Man hat nach einer Lösung gesucht:   // RAII  <==== 
+
+"Schlecht geredet":  int*   Pointer  // "raw" pointer
+
+Deterministische Freigabe :  verhindert Leaks im Speicher
+
+1. Lösung: auto_ptr:  [[ deprecated ]]
+
+Jetzt gibt es gleich 3 Lösungen: 
+
+a) "Unique" Zeiger:  Kommt dem "raw" Zeiger recht nahe :)
+
+i) Dieser ist zu EINEM Zeitpunkt im Programm nur an EINER Stelle vorhanden.
+   (std::move kann aber zum VERSCHIEBEN verwendet werden !!!)
+
+ii) Der Zeiger an sich wird durch ein Hüllen Objekt verwaltet:
+
+   = Dieses hat einen Konstruktor ( new )
+   = Dieses hat einen DESTRUKTOR
+   = Wenn das Hüllen Objekt am Stack liegt // ein lokales Objekt einer Funktion ist:
+     Wird der DESTRUKTOR am Ende der Funktion (Methode) aufgerufen !!!
+	 Determinismus
+
+Wie sieht es mit einem Unterprogramm Aufruf aus ???
+
+b) "Shared" Zeiger:
+
+i) Dieser kann zu EINEM Zeitpunkt im Programm an MEHREREN Stellen vorhanden sein.
+
+ii) Der Zeiger an sich wird durch ein Hüllen Objekt verwaltet:
+
+Wenn ein Hüllenobjekt aus dem Scope geht:  Was ist dann mit dem Raw Zeiger ???
+
+Da muss man die Hüllenobjekte mitzählen!   
+
+Referenz Count  0 -> 1 -> 2 -> 3 -> 2 -> 1 -> 0: Erst hier darf delete aufgerufen werden.
+
+c)  "Weak" Zeiger: Partner vom "Shared" Zeiger.
+
+Detected memory leaks!
+Dumping objects ->
+C:\Development\Seminar_Regisafe_02\Cpp_ModernSnippets\GeneralSnippets\SharedPtr\StdSharedPtr.cpp(99) 
+    : {154} normal block at 0x000001E57DC3FD70, 40 bytes long.
+ Data: <                > CD CD CD CD CD CD CD CD CD CD CD CD CD CD CD CD 
+Object dump complete.
+
+// ==========================
+
+Zum std::shared_ptr<int>:
+
+Dieser verwaltet zwei dynmische Speicherbereiche:
+
+a) Den eigentlich vom Anwender erwünschten Speicherbereich
+b) Einen Controlblock mit dem Referenz Zähler
+
+Hier findet - aber nur durch make_shared - eine Optimierung statt:
+
+a) und b) liegen in EINEM dynamisch allokiertem Speicherbereich (new).
+
+
+Detected memory leaks!
+Dumping objects ->
+{156} normal block at 0x00000246C4F6BD10, 32 bytes long.
+ Data: <` N             > 60 B1 4E 16 F7 7F 00 00 01 00 00 00 01 00 00 00 
+{155} normal block at 0x00000246C4F6BE30, 32 bytes long.
+ Data: <0 N             > 30 B1 4E 16 F7 7F 00 00 01 00 00 00 01 00 00 00 
+{154} normal block at 0x00000246C4F6F910, 48 bytes long.
+ Data: <  N             > 00 B1 4E 16 F7 7F 00 00 02 00 00 00 01 00 00 00 
+Object dump complete.
+
+=======================================================================
+
+Algorithmen
+
+std::generate:   Vorbelegen aller Elemente eines Bereichs, die zu berechnen sind.
+
+std::fill:       Vorbelegen aller Elemente eines Bereichs (konstanten Wert)
+
+std::accumulate: Besitzt Ähnlichkeiten zu "Folding"
+
+"Anhäufen"
+
+Es werden viele Werte berechnet, ähnlich zu einer Folge ....
+die Berechnung des n+1.-ten Werts setzt die Kenntnis des n.-ten Werts voraus.
+
+std::accumulate: 
+
+4 Parameter
+
+1. Parameter: Anfang des Bereichs
+2. Parameter: Ende des Bereichs
+3. Parameter: Startwert: "0.-te Wert" - interessant: Kann ein anderer Typ sein als der zu Grunde legende Typ
+              des Containersn (Container von int =======> Zeichenkette  std::string)#
+4. Parameter: Funktionalität  (Lambda-Funktion // Funktion // glob. Funktion // Callable)
+
+Lambda-Funktion : 2 Parameter  
+
+a) der Ergbenis-Wert der vorhergehenden Berechnung 
+b) der nächste Wert aus dem Bereich
+
+"Binäre" Funktion: 2 Parameter.
+
+Beispiel:   Container von Zeichenketten:   "Sepp", "Anton", "Hans"
+
+Ergebnis:  Informative Zeichenkette (eine) aller Mitglieder des Containers
+
+"01:   Sepp\n"
+
+"01:   Sepp\n
+ 02:   Anton\n"
+
+"01:   Sepp\n
+ 02:   Anton\n
+ 03:   Hans"
+
+ // ==============================================================
+
+ Mit den C++ / STL - Algorithmen können wir in die Nähe
+ von "funkionaler Programmierung" uns bewegen:
+
+ Kernfunktionen der funktionalen Programmierung:
+
+ Höheren Funktionen:
+
+ Idiom:   Filter - Map - Reduce
+
+ Filter:   std::copy_if
+ Map:      std::transform
+ Reduce:   std::accumulate
+
+
+ Ausblick: Schachtelbarkeit von STL - Algorithmen:   C++  20 "Ranges"
+
+// ==============================================================
+
+Muktiplikationstabelle:   vom COMPILER berechnen lassen ((    nicht mit MASCHINENCODE ))
+=======================
+
+1   2   3   4   5
+
+1   4   9   16  25
+
+1   8   27  64  125
+
+1   16  81  256 625   in etwa 900 
+
+constexpr
+
+Mini - C
+
+Auch Teile der STL  (( std::array, ....  )) zur Übersetzungszeit angelegt werden können.
+
+==============================================================
+
+Datentyp int:   Wie groß ist eine int-Variable ?
+
+Hängt davon ab :)
+
+==============================================================
+
+C++:   Klassische Definition   ( Keine Templates )
+       C mit Klassen :)
+
+Stroustrup:  Bibliothek
+
+Stepanov:    Ich habe eine Bibliothek (andere Progr.Sprachen)
+             Ich denke viel über generische Programmierung nach (Templates ...)
+
+Bringe ich bei C++ unter ...
+
+Design von C++: Templates    :   Template-Klassen und Template-Funktionen
+
+Hat C++ ein "zweites Gesicht" bekommen !
+
+10:55 :) 
+
+==============================================================
+
+Benutzerdefinierte Literale
+
+a) Konstante
+
+b) Mit einem proprietären Format:    operator "" bezeichner    // km, millimeter, farbe, meinDatum
+
+   Mit dem return zurück zu liefern
+
+auto n = 123.45f;
+
+auto abstand = 3_km;
+
+auto abstand = 3_millimeter;  // 3  ===>  operator "" (millimeter):  Wert vor dem _
+
+Datentyp: Wird ebenfalls flexibel festgelegt.
+
+// "Cooked" Version
+auto farbe = 0x00FF00_farbe;    // RGB  grün  // Datentyp:  Klasse Color  ( int )
+
+// "Raw" Version
+auto einDatum = "27:01:2022-11.11.30"_meinDatum;
+
+Maße, Einheiten, Werte, 
+
+Konkret:  0x00FF00_rgb   // Color // Farbobjekte mit Konstanten vorbelegen
+
+Anwendung bestimmter Modern C++ Techniken: constexpr
+
+2. Teil:  operator""  mit constexpr
+
+
+==============================================================
+
+Variadische Templates:   "..."
+
+Rekursives Denken
+
+Vorsicht:  "Code Bloat"
+
+Vorbemerkung:
+
+a) Verwende ich Variadische Templates nach diesem Seminar explizit?
+
+      Das wird sich zeigen :)
+
+b) Wozu behandeln wir sie:  Für das Verständnis  
+
+make_unique
+make_shared
+
+Für Klassen und Funktionen
+
+
+args ==>  10, 11, 100   (  auspacken)  ==>  args ...
+
+// ===================================================
+
+Möchte für ALLE Elemente einer var. Argumentenliste
+eine Funktion aufrufen:
+
+Lösung:  Trick
+
+function (ARGS ... args) 
+{
+   for (T element  :  args) {
+       doSomething(element);
+   }
+}
+
+Trick:    C - Programmer    Komma - Operator
+
+Eine Kombintion aus std::initializer_list UND Sequenz Operator !
+
+
+ // Sequenz Operator
+
+int a, b;
+
+a = 1;
+b = 2;
+
+a = 1, b = 2;
+
+if (a = 1) {
+}
+
+// ===================================================
+
+Einpacken:    ... T   oder ... args
+
+Auspacken:    args ...       ===> args1, args2, args3, ..., argsN
+
+Offen oder konzeptionell NICHT vorgesehen:
+
+Der direkte Zugriff auf EINZELNE Argumente eines Packs.
+
+Option // Beobachtung:
+======================
+
+Auspacken in einer std::initializer_list geht:
+
+std::initializer_list:   { 1, 2, 3 }
+
+std::initializer_list:   { args ... }
+
+// Aufgaben
+
+
